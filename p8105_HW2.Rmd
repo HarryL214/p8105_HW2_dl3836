@@ -9,6 +9,8 @@ output: github_document
 library(tidyverse)
 library(janitor)
 library(here)
+library(readxl)
+library(stringr)
 ```
 #Problem 1
 ## Tidy up pols_month.csv
@@ -71,6 +73,45 @@ merged_df <-
   left_join(unemp, by = c("year", "month")) %>% 
   arrange(year, month)
 
+```
+
+#Problem 2
+```{r}
+tw_path = here( "202409 Trash Wheel Collection Data.xlsx")
+```
+
+##Specify which column we want to keep
+```{r}
+wanted_cols = c(
+  "dumpster", "month", "year", "date",
+  "weight_tons", "volume_cubic_yards",
+  "plastic_bottles", "polystyrene",
+  "cigarette_butts", "glass_bottles",
+  "grocery_bags", "chip_bags",
+  "sports_balls", "homes_powered"
+)
+
+read_clean_trash = function(sheet_name, wheel_label) {
+  raw = read_excel(
+    path  = tw_path,
+    sheet = sheet_name,
+    skip  = 1
+  ) %>%
+    clean_names()
+
+  keep = intersect(wanted_cols, names(raw))
+
+  raw %>%
+    select(all_of(keep)) %>%
+    filter(!is.na(dumpster)) %>%
+    mutate(
+      month = str_to_title(as.character(month)),
+      date  = as.Date(date),
+      year  = as.integer(year),
+      sports_balls = as.integer(round(sports_balls)),
+      wheel = wheel_label
+    )
+}
 ```
 
 
