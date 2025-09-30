@@ -10,6 +10,8 @@ library(tidyverse)
 library(janitor)
 library(here)
 ```
+#Problem 1
+## Tidy up pols_month.csv
 ```{r}
 pols = 
   read_csv(here("pols-month.csv")) %>% 
