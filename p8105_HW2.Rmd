@@ -42,6 +42,27 @@ snp =
   select(year, month, close) %>% 
   arrange(year, month)
 ```
+## Tidy up unemployment.csv
+```{r}
+unemp = 
+  read_csv(here("unemployment.csv")) %>% 
+  clean_names() %>% 
+  pivot_longer(
+    jan:dec, 
+    names_to = "month_abbr", values_to = "unemployment"
+  ) %>% 
+  mutate(
+    month = recode(month_abbr,
+      "jan" = "january", "feb" = "february", "mar" = "march",
+      "apr" = "april",   "may" = "may",       "jun" = "june",
+      "jul" = "july",    "aug" = "august",    "sep" = "september",
+      "oct" = "october", "nov" = "november",  "dec" = "december"
+    )
+  ) %>% 
+  select(year, month, unemployment) %>% 
+  arrange(year, month)
+
+```
 
 
 
