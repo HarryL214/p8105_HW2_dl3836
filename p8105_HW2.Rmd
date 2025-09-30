@@ -28,3 +28,28 @@ pols =
 
 ```
 
+##Tidy up snp.csv
+```{r}
+snp = 
+  read_csv(here("snp.csv")) %>% 
+  clean_names() %>% 
+  separate(date, into = c("month", "day", "year"), sep = "/", convert = TRUE) %>% 
+  mutate(
+    year = year + 2000,
+    year = if_else(year > 2015, year - 100, year),
+    month = tolower(month.name[month])
+  ) %>% 
+  select(year, month, close) %>% 
+  arrange(year, month)
+```
+
+
+
+
+
+
+
+
+
+
+
