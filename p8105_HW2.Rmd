@@ -63,6 +63,15 @@ unemp =
   arrange(year, month)
 
 ```
+##Combine each dataset
+```{r}
+merged_df <- 
+  pols %>% 
+  left_join(snp,   by = c("year", "month")) %>% 
+  left_join(unemp, by = c("year", "month")) %>% 
+  arrange(year, month)
+
+```
 
 
 
