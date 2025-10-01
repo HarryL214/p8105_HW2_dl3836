@@ -11,6 +11,9 @@ library(janitor)
 library(here)
 library(readxl)
 library(stringr)
+library(readr)
+library(lubridate)
+library(knitr)
 ```
 #Problem 1
 ## Tidy up pols_month.csv
@@ -151,6 +154,83 @@ key_vars = intersect(wanted_cols, names(trash_all))
 
 
 After cleaning and combinin, thedataset contains **`r n_obs_trash` observations**, and each obswervation correlates to a dumpsterand contains variables like **`r paste(key_vars, collapse = ", ")`**, that create a link to the collection time, weight of trash, volume of trash, and so on. In the available data, **Professor Trash Wheel** collected a total of **`r round(prof_total_weight, 1)` tons** of trash, and **Gwynnda Trash Wheel** collected **`r gwyn_jun2022_cigs` cigarette butts** in **June 2022**.
+
+#Problem 3
+##basic setup
+```{r}
+zip_zori = here("Zip_zori_uc_sfrcondomfr_sm_month_NYC.csv")
+zip_codes = here("Zip Codes.csv")
+nyc_borough_order = c("Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island")
+```
+
+##Data clean up
+```{r}
+zori_raw = read_csv(zip_zori)
+
+zori_long = zori_raw %>%
+  mutate(zip = sprintf("%05s", as.character(RegionName))) %>%
+  pivot_longer(
+    cols = matches("^\\d{4}-\\d{2}-\\d{2}$"), 
+    names_to = "date",
+    values_to = "zori"
+  ) %>%
+  mutate(
+    date = as.Date(date),
+    year = year(date),
+    month = month(date, label = TRUE, abbr = FALSE) |> as.character()
+  ) %>%
+  select(zip, date, year, month, zori,
+         CountyName, City, StateName, State, Metro) %>%
+  clean_names() %>%
+  arrange(zip, date)
+```
+```{r}
+zipmap_raw = read_csv(zip_codes) %>% clean_names()
+
+zipmap = zipmap_raw %>%
+  mutate(
+    # 这里改：zipcode -> zip_code
+    zip = sprintf("%05d", as.integer(zip_code)),
+    borough = case_when(
+      county == "Bronx"      ~ "Bronx",
+      county == "Kings"      ~ "Brooklyn",
+      county == "New York"   ~ "Manhattan",
+      county == "Queens"     ~ "Queens",
+      county == "Richmond"   ~ "Staten Island",
+      TRUE ~ county
+    )
+  ) %>%
+  select(zip, borough, neighborhood) %>%
+  mutate(borough = factor(borough, levels = nyc_borough_order, ordered = TRUE)) %>%
+  arrange(borough, zip)
+```
+#Integrate together
+```{r}
+zori_with_borough = zori_long %>%
+  mutate(
+    borough = case_when(
+      county_name == "Bronx"        ~ "Bronx",
+      county_name == "Kings"        ~ "Brooklyn",
+      county_name == "New York"     ~ "Manhattan",
+      county_name == "Queens"       ~ "Queens",
+      county_name == "Richmond"     ~ "Staten Island",
+      TRUE ~ NA_character_
+    )
+  )
+
+neighborhood_lookup = zipmap %>%
+  group_by(zip) %>%
+  summarise(
+    neighborhoods = paste(sort(unique(neighborhood)), collapse = "; "),
+    .groups = "drop"
+  )
+
+zori_nyc = zori_with_borough %>%
+  left_join(neighborhood_lookup, by = "zip") %>%
+  relocate(borough, neighborhoods, .after = zip) %>%
+  arrange(borough, zip, date)
+
+```
 
 
 
